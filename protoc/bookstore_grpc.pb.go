@@ -19,21 +19,28 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BookStore_CreateBook_FullMethodName = "/BookStore/CreateBook"
-	BookStore_GetBook_FullMethodName    = "/BookStore/GetBook"
-	BookStore_DeleteBook_FullMethodName = "/BookStore/DeleteBook"
-	BookStore_ListBooks_FullMethodName  = "/BookStore/ListBooks"
+	BookStore_CreateUser_FullMethodName     = "/BookStore/CreateUser"
+	BookStore_Authentication_FullMethodName = "/BookStore/Authentication"
+	BookStore_CreateBook_FullMethodName     = "/BookStore/CreateBook"
+	BookStore_GetBook_FullMethodName        = "/BookStore/GetBook"
+	BookStore_DeleteBook_FullMethodName     = "/BookStore/DeleteBook"
+	BookStore_ListBooks_FullMethodName      = "/BookStore/ListBooks"
+	BookStore_UpdateBook_FullMethodName     = "/BookStore/UpdateBook"
 )
 
 // BookStoreClient is the client API for BookStore service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BookStoreClient interface {
+	// RPC services to create a user and authenticate it
+	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
+	Authentication(ctx context.Context, in *AuthenticationUserRequest, opts ...grpc.CallOption) (*AuthenticationUserResponse, error)
 	// Multiple rpc services handling different function
 	CreateBook(ctx context.Context, in *CreateBookRequest, opts ...grpc.CallOption) (*CreateBookResponse, error)
 	GetBook(ctx context.Context, in *GetBookRequest, opts ...grpc.CallOption) (*GetBookResponse, error)
 	DeleteBook(ctx context.Context, in *DeleteBookRequest, opts ...grpc.CallOption) (*DeleteBookResponse, error)
 	ListBooks(ctx context.Context, in *ListBooksRequest, opts ...grpc.CallOption) (*ListBooksResponse, error)
+	UpdateBook(ctx context.Context, in *UpdateBookRequest, opts ...grpc.CallOption) (*UpdateBookResponse, error)
 }
 
 type bookStoreClient struct {
@@ -42,6 +49,26 @@ type bookStoreClient struct {
 
 func NewBookStoreClient(cc grpc.ClientConnInterface) BookStoreClient {
 	return &bookStoreClient{cc}
+}
+
+func (c *bookStoreClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateUserResponse)
+	err := c.cc.Invoke(ctx, BookStore_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookStoreClient) Authentication(ctx context.Context, in *AuthenticationUserRequest, opts ...grpc.CallOption) (*AuthenticationUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AuthenticationUserResponse)
+	err := c.cc.Invoke(ctx, BookStore_Authentication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *bookStoreClient) CreateBook(ctx context.Context, in *CreateBookRequest, opts ...grpc.CallOption) (*CreateBookResponse, error) {
@@ -84,15 +111,29 @@ func (c *bookStoreClient) ListBooks(ctx context.Context, in *ListBooksRequest, o
 	return out, nil
 }
 
+func (c *bookStoreClient) UpdateBook(ctx context.Context, in *UpdateBookRequest, opts ...grpc.CallOption) (*UpdateBookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateBookResponse)
+	err := c.cc.Invoke(ctx, BookStore_UpdateBook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BookStoreServer is the server API for BookStore service.
 // All implementations must embed UnimplementedBookStoreServer
 // for forward compatibility.
 type BookStoreServer interface {
+	// RPC services to create a user and authenticate it
+	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
+	Authentication(context.Context, *AuthenticationUserRequest) (*AuthenticationUserResponse, error)
 	// Multiple rpc services handling different function
 	CreateBook(context.Context, *CreateBookRequest) (*CreateBookResponse, error)
 	GetBook(context.Context, *GetBookRequest) (*GetBookResponse, error)
 	DeleteBook(context.Context, *DeleteBookRequest) (*DeleteBookResponse, error)
 	ListBooks(context.Context, *ListBooksRequest) (*ListBooksResponse, error)
+	UpdateBook(context.Context, *UpdateBookRequest) (*UpdateBookResponse, error)
 	mustEmbedUnimplementedBookStoreServer()
 }
 
@@ -103,6 +144,12 @@ type BookStoreServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBookStoreServer struct{}
 
+func (UnimplementedBookStoreServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedBookStoreServer) Authentication(context.Context, *AuthenticationUserRequest) (*AuthenticationUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Authentication not implemented")
+}
 func (UnimplementedBookStoreServer) CreateBook(context.Context, *CreateBookRequest) (*CreateBookResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBook not implemented")
 }
@@ -114,6 +161,9 @@ func (UnimplementedBookStoreServer) DeleteBook(context.Context, *DeleteBookReque
 }
 func (UnimplementedBookStoreServer) ListBooks(context.Context, *ListBooksRequest) (*ListBooksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBooks not implemented")
+}
+func (UnimplementedBookStoreServer) UpdateBook(context.Context, *UpdateBookRequest) (*UpdateBookResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBook not implemented")
 }
 func (UnimplementedBookStoreServer) mustEmbedUnimplementedBookStoreServer() {}
 func (UnimplementedBookStoreServer) testEmbeddedByValue()                   {}
@@ -134,6 +184,42 @@ func RegisterBookStoreServer(s grpc.ServiceRegistrar, srv BookStoreServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&BookStore_ServiceDesc, srv)
+}
+
+func _BookStore_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookStoreServer).CreateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookStore_CreateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookStoreServer).CreateUser(ctx, req.(*CreateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BookStore_Authentication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuthenticationUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookStoreServer).Authentication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookStore_Authentication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookStoreServer).Authentication(ctx, req.(*AuthenticationUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _BookStore_CreateBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -208,6 +294,24 @@ func _BookStore_ListBooks_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BookStore_UpdateBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookStoreServer).UpdateBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookStore_UpdateBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookStoreServer).UpdateBook(ctx, req.(*UpdateBookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BookStore_ServiceDesc is the grpc.ServiceDesc for BookStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -215,6 +319,14 @@ var BookStore_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "BookStore",
 	HandlerType: (*BookStoreServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateUser",
+			Handler:    _BookStore_CreateUser_Handler,
+		},
+		{
+			MethodName: "Authentication",
+			Handler:    _BookStore_Authentication_Handler,
+		},
 		{
 			MethodName: "CreateBook",
 			Handler:    _BookStore_CreateBook_Handler,
@@ -230,6 +342,10 @@ var BookStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListBooks",
 			Handler:    _BookStore_ListBooks_Handler,
+		},
+		{
+			MethodName: "UpdateBook",
+			Handler:    _BookStore_UpdateBook_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

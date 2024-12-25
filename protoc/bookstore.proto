@@ -2,7 +2,32 @@ syntax = "proto3";
 
 option go_package = "./";
 
+message CreateUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message CreateUserResponse {
+    string user_id = 1;
+}
+
+message AuthenticationUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message AuthenticationUserResponse {
+    string user_id = 1;
+    string token = 2;
+}
+
 service BookStore {
+
+    // RPC services to create a user and authenticate it
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+
+    rpc Authentication (AuthenticationUserRequest) returns (AuthenticationUserResponse);
+    
     // Multiple rpc services handling different function 
     rpc CreateBook (CreateBookRequest) returns (CreateBookResponse);
 
@@ -11,6 +36,8 @@ service BookStore {
     rpc DeleteBook (DeleteBookRequest) returns (DeleteBookResponse);
 
     rpc ListBooks (ListBooksRequest) returns (ListBooksResponse);
+
+    rpc UpdateBook (UpdateBookRequest) returns (UpdateBookResponse);
 
 }
 
@@ -60,4 +87,14 @@ message ListBooksRequest {
 
 message ListBooksResponse {
     repeated Book books = 1;
+}
+
+// Type to update the book
+
+message UpdateBookRequest {
+    Book book = 1;
+}
+
+message UpdateBookResponse {
+    bool success = 1;
 }
